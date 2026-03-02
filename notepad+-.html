@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Texto Moderno</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Ubuntu Mono', 'Courier New', monospace;
+            overflow: hidden;
+            transition: background 0.8s ease;
+            font-weight: 400;
+        }
+
+        /* Skins - Gradientes */
+        body.skin-1 {
+            background: #ffd89b;
+            background: -webkit-linear-gradient(to right, #19547b, #ffd89b);
+            background: linear-gradient(to right, #19547b, #ffd89b);
+        }
+
+        body.skin-2 {
+            background: #000428;
+            background: -webkit-linear-gradient(to right, #004e92, #000428);
+            background: linear-gradient(to right, #004e92, #000428);
+        }
+
+        body.skin-3 {
+            background: #093028;
+            background: -webkit-linear-gradient(to right, #237A57, #093028);
+            background: linear-gradient(to right, #237A57, #093028);
+        }
+
+        body.skin-4 {
+            background: #4B79A1;
+            background: -webkit-linear-gradient(to right, #283E51, #4B79A1);
+            background: linear-gradient(to right, #283E51, #4B79A1);
+        }
+
+        body.skin-5 {
+            background: #0F2027;
+            background: -webkit-linear-gradient(to right, #2C5364, #203A43, #0F2027);
+            background: linear-gradient(to right, #2C5364, #203A43, #0F2027);
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Seletor de Skins - Glassmorphism Intensificado */
+        .skin-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .skin-selector:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        }
+
+        .skin-selector svg {
+            width: 24px;
+            height: 24px;
+            filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8));
+        }
+
+        .skin-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: rgba(30, 30, 30, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 12px;
+            min-width: 200px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            animation: slideDown 0.3s ease;
+        }
+
+        .skin-dropdown.active {
+            display: flex;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .skin-option {
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #fff;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            font-family: 'Ubuntu Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .skin-option:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+        }
+
+        .skin-option.active {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.4);
+            font-weight: 700;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .skin-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Editor Container - Glassmorphism Intensificado */
+        .editor-wrapper {
+            flex: 1;
+            display: flex;
+            margin: 20px;
+            gap: 0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            background: rgba(30, 30, 30, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* Line Numbers */
+        .line-numbers {
+            background: rgba(0, 0, 0, 0.35);
+            color: rgba(255, 255, 255, 0.45);
+            padding: 16px 8px;
+            text-align: center;
+            font-family: 'Ubuntu Mono', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border-right: 1px solid rgba(255, 255, 255, 0.12);
+            user-select: none;
+            min-width: 50px;
+            overflow: hidden;
+            max-height: 100%;
+            font-weight: 400;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .line-number {
+            height: 23.4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Editor Content */
+        .editor-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Search Bar - Glassmorphism Intensificado */
+        .search-bar {
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 12px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .search-bar.active {
+            opacity: 1;
+            max-height: 60px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 8px 12px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: 'Ubuntu Mono', monospace;
+            font-weight: 400;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .search-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            font-family: 'Ubuntu Mono', monospace;
+            font-weight: 400;
+            backdrop-filter: blur(10px);
+        }
+
+        .search-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .search-counter {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        /* Textarea */
+        .textarea {
+            flex: 1;
+            background: transparent;
+            color: #ffd700;
+            border: none;
+            outline: none;
+            padding: 16px;
+            font-family: 'Ubuntu Mono', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            overflow: auto;
+            position: relative;
+            z-index: 2;
+            white-space: pre;
+            word-wrap: normal;
+            font-weight: 400;
+            tab-size: 4;
+            -moz-tab-size: 4;
+        }
+
+        .textarea::selection {
+            background: rgba(255, 215, 0, 0.3);
+        }
+
+        /* Indentation Guides */
+        .indentation-guides {
+            position: absolute;
+            top: 0;
+            left: 16px;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .indent-line {
+            position: absolute;
+            width: 1px;
+            height: 100%;
+            background: rgba(255, 215, 0, 0.1);
+            top: 0;
+        }
+
+        /* Images Container */
+        .images-container {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 3;
+            overflow: visible;
+        }
+
+        .pasted-image {
+            position: absolute;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            cursor: move;
+            pointer-events: auto;
+            border: 2px solid rgba(255, 215, 0, 0.4);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            object-fit: cover;
+        }
+
+        .pasted-image:hover {
+            border-color: rgba(255, 215, 0, 0.7);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+            transform: scale(1.02);
+        }
+
+        .pasted-image.selected {
+            border-color: rgba(255, 215, 0, 0.9);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        /* Scrollbar */
+        .editor-content::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .editor-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .editor-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.35);
+            border-radius: 5px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .editor-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 215, 0, 0.55);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        /* Highlight para busca */
+        .highlight {
+            background: rgba(255, 215, 0, 0.4);
+            border-radius: 2px;
+        }
+
+        .highlight.current {
+            background: rgba(255, 215, 0, 0.7);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 999;
+            display: none;
+            font-family: 'Ubuntu Mono', monospace;
+            font-weight: 400;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .tooltip.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="skin-1">
+    <div class="container">
+        <!-- Seletor de Skins -->
+        <div class="skin-selector" id="skinSelector">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"></circle>
+                <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m2.12 2.12l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m2.12-2.12l4.24-4.24M19.78 19.78l-4.24-4.24m-2.12-2.12l-4.24-4.24"></path>
+            </svg>
+            <div class="skin-dropdown" id="skinDropdown">
+                <div class="skin-option active" data-skin="skin-1">
+                    <span class="skin-preview" style="background: linear-gradient(to right, #19547b, #ffd89b);"></span>
+                    Dourado
+                </div>
+                <div class="skin-option" data-skin="skin-2">
+                    <span class="skin-preview" style="background: linear-gradient(to right, #004e92, #000428);"></span>
+                    Azul Noturno
+                </div>
+                <div class="skin-option" data-skin="skin-3">
+                    <span class="skin-preview" style="background: linear-gradient(to right, #237A57, #093028);"></span>
+                    Verde Floresta
+                </div>
+                <div class="skin-option" data-skin="skin-4">
+                    <span class="skin-preview" style="background: linear-gradient(to right, #283E51, #4B79A1);"></span>
+                    Azul Profundo
+                </div>
+                <div class="skin-option" data-skin="skin-5">
+                    <span class="skin-preview" style="background: linear-gradient(to right, #2C5364, #203A43, #0F2027);"></span>
+                    Oceano Escuro
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor -->
+        <div class="editor-wrapper">
+            <!-- Números de Linha -->
+            <div class="line-numbers" id="lineNumbers"></div>
+
+            <!-- Conteúdo do Editor -->
+            <div class="editor-content">
+                <!-- Barra de Pesquisa -->
+                <div class="search-bar" id="searchBar">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        id="searchInput" 
+                        placeholder="Pesquisar por palavra ou linha..."
+                    >
+                    <div class="search-controls">
+                        <button class="search-btn" id="prevBtn">↑</button>
+                        <button class="search-btn" id="nextBtn">↓</button>
+                        <span class="search-counter" id="searchCounter">0/0</span>
+                        <button class="search-btn" id="closeSearchBtn">✕</button>
+                    </div>
+                </div>
+
+                <!-- Guides de Indentação -->
+                <div class="indentation-guides" id="indentationGuides"></div>
+
+                <!-- Container de Imagens -->
+                <div class="images-container" id="imagesContainer"></div>
+
+                <!-- Textarea -->
+                <textarea 
+                    class="textarea" 
+                    id="textarea" 
+                    spellcheck="false"
+                    placeholder="Comece a digitar... (Ctrl+F para pesquisar, Ctrl+V para colar imagens)"
+                ></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Elementos
+        const textarea = document.getElementById('textarea');
+        const lineNumbers = document.getElementById('lineNumbers');
+        const skinSelector = document.getElementById('skinSelector');
+        const skinDropdown = document.getElementById('skinDropdown');
+        const skinOptions = document.querySelectorAll('.skin-option');
+        const searchBar = document.getElementById('searchBar');
+        const searchInput = document.getElementById('searchInput');
+        const searchCounter = document.getElementById('searchCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const closeSearchBtn = document.getElementById('closeSearchBtn');
+        const indentationGuides = document.getElementById('indentationGuides');
+        const imagesContainer = document.getElementById('imagesContainer');
+        const tooltip = document.getElementById('tooltip');
+        const editorContent = document.querySelector('.editor-content');
+
+        let searchMatches = [];
+        let currentSearchIndex = 0;
+
+        // Largura de um caractere em pixels (Ubuntu Mono 14px)
+        const charWidth = 8.4;
+        const lineHeight = 23.4;
+
+        // Atualizar números de linha
+        function updateLineNumbers() {
+            const lines = textarea.value.split('\n');
+            lineNumbers.innerHTML = '';
+            
+            lines.forEach((_, i) => {
+                const lineNum = document.createElement('div');
+                lineNum.className = 'line-number';
+                lineNum.textContent = i + 1;
+                lineNumbers.appendChild(lineNum);
+            });
+        }
+
+        // Obter indentação da linha
+        function getLineIndentation(line) {
+            let indent = '';
+            for (let i = 0; i < line.length; i++) {
+                if (line[i] === '\t' || line[i] === ' ') {
+                    indent += line[i];
+                } else {
+                    break;
+                }
+            }
+            return indent;
+        }
+
+        // Atualizar guias de indentação
+        function updateIndentationGuides() {
+            indentationGuides.innerHTML = '';
+            const lines = textarea.value.split('\n');
+
+            lines.forEach((line, lineIndex) => {
+                let charPos = 0;
+                
+                // Percorrer cada caractere da linha até encontrar o primeiro não-espaço
+                for (let i = 0; i < line.length; i++) {
+                    if (line[i] === '\t') {
+                        // TAB = 4 espaços
+                        charPos += 4;
+                        
+                        // Criar guia de indentação
+                        const guide = document.createElement('div');
+                        guide.className = 'indent-line';
+                        guide.style.left = (16 + charPos * charWidth) + 'px';
+                        guide.style.top = (lineIndex * lineHeight) + 'px';
+                        guide.style.height = lineHeight + 'px';
+                        indentationGuides.appendChild(guide);
+                    } else if (line[i] === ' ') {
+                        charPos += 1;
+                    } else {
+                        break;
+                    }
+                }
+            });
+        }
+
+        // Sincronizar scroll
+        textarea.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = textarea.scrollTop;
+            indentationGuides.scrollTop = textarea.scrollTop;
+            imagesContainer.style.transform = `translateY(${-textarea.scrollTop}px)`;
+        });
+
+        // Atualizar ao digitar
+        textarea.addEventListener('input', () => {
+            updateLineNumbers();
+            updateIndentationGuides();
+        });
+
+        // Suporte a TAB e auto-indentação ao pressionar Enter
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const text = textarea.value;
+                
+                if (start === end) {
+                    // Inserir tab na posição do cursor
+                    textarea.value = text.substring(0, start) + '\t' + text.substring(end);
+                    textarea.selectionStart = textarea.selectionEnd = start + 1;
+                } else {
+                    // Indentar múltiplas linhas selecionadas
+                    const beforeSelection = text.substring(0, start);
+                    const selectedText = text.substring(start, end);
+                    const afterSelection = text.substring(end);
+                    
+                    const lineStart = beforeSelection.lastIndexOf('\n') + 1;
+                    const beforeLine = text.substring(0, lineStart);
+                    const lines = selectedText.split('\n');
+                    const indentedLines = lines.map((line, i) => {
+                        return i === 0 ? line : '\t' + line;
+                    }).join('\n');
+                    
+                    textarea.value = beforeLine + indentedLines + afterSelection;
+                    textarea.selectionStart = start;
+                    textarea.selectionEnd = start + indentedLines.length;
+                }
+                
+                updateLineNumbers();
+                updateIndentationGuides();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                
+                const start = textarea.selectionStart;
+                const text = textarea.value;
+                
+                // Encontrar o início da linha atual
+                let lineStart = text.lastIndexOf('\n', start - 1) + 1;
+                const currentLine = text.substring(lineStart, start);
+                
+                // Obter indentação da linha atual
+                const indent = getLineIndentation(currentLine);
+                
+                // Inserir nova linha com indentação
+                const before = text.substring(0, start);
+                const after = text.substring(start);
+                textarea.value = before + '\n' + indent + after;
+                
+                // Mover cursor para o final da indentação
+                const newPosition = start + 1 + indent.length;
+                textarea.selectionStart = newPosition;
+                textarea.selectionEnd = newPosition;
+                
+                // Atualizar números de linha e guias
+                updateLineNumbers();
+                updateIndentationGuides();
+            }
+        });
+
+        // Pesquisa (Ctrl+F)
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                searchBar.classList.toggle('active');
+                if (searchBar.classList.contains('active')) {
+                    searchInput.focus();
+                    performSearch();
+                }
+            }
+        });
+
+        // Realizar pesquisa
+        function performSearch() {
+            const query = searchInput.value.toLowerCase();
+            searchMatches = [];
+            currentSearchIndex = 0;
+
+            if (!query) {
+                searchCounter.textContent = '0/0';
+                return;
+            }
+
+            const text = textarea.value.toLowerCase();
+            const lines = textarea.value.split('\n');
+
+            // Buscar por linha
+            if (query.startsWith('linha:')) {
+                const lineNum = parseInt(query.substring(6)) - 1;
+                if (lineNum >= 0 && lineNum < lines.length) {
+                    searchMatches.push({
+                        line: lineNum,
+                        text: lines[lineNum],
+                        type: 'line'
+                    });
+                }
+            } else {
+                // Buscar por palavra
+                let pos = 0;
+                while ((pos = text.indexOf(query, pos)) !== -1) {
+                    let lineNum = textarea.value.substring(0, pos).split('\n').length - 1;
+                    searchMatches.push({
+                        pos: pos,
+                        line: lineNum,
+                        length: query.length,
+                        type: 'word'
+                    });
+                    pos += query.length;
+                }
+            }
+
+            updateSearchCounter();
+            if (searchMatches.length > 0) {
+                highlightCurrentMatch();
+            }
+        }
+
+        function updateSearchCounter() {
+            searchCounter.textContent = searchMatches.length > 0 
+                ? `${currentSearchIndex + 1}/${searchMatches.length}` 
+                : '0/0';
+        }
+
+        function highlightCurrentMatch() {
+            if (searchMatches.length === 0) return;
+
+            const match = searchMatches[currentSearchIndex];
+            if (match.type === 'line') {
+                const lineStart = textarea.value.split('\n').slice(0, match.line).join('\n').length + (match.line > 0 ? 1 : 0);
+                const lineEnd = lineStart + match.text.length;
+                textarea.setSelectionRange(lineStart, lineEnd);
+            } else {
+                textarea.setSelectionRange(match.pos, match.pos + match.length);
+            }
+
+            textarea.focus();
+            const scrollPos = textarea.selectionStart - textarea.value.substring(0, textarea.selectionStart).split('\n').length * lineHeight;
+            textarea.scrollTop = Math.max(0, scrollPos - 100);
+        }
+
+        searchInput.addEventListener('input', performSearch);
+        prevBtn.addEventListener('click', () => {
+            if (searchMatches.length > 0) {
+                currentSearchIndex = (currentSearchIndex - 1 + searchMatches.length) % searchMatches.length;
+                updateSearchCounter();
+                highlightCurrentMatch();
+            }
+        });
+        nextBtn.addEventListener('click', () => {
+            if (searchMatches.length > 0) {
+                currentSearchIndex = (currentSearchIndex + 1) % searchMatches.length;
+                updateSearchCounter();
+                highlightCurrentMatch();
+            }
+        });
+        closeSearchBtn.addEventListener('click', () => {
+            searchBar.classList.remove('active');
+        });
+
+        // Seletor de Skins
+        skinSelector.addEventListener('click', () => {
+            skinDropdown.classList.toggle('active');
+        });
+
+        skinOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const skin = option.dataset.skin;
+                document.body.className = skin;
+                
+                skinOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                
+                localStorage.setItem('selectedSkin', skin);
+                skinDropdown.classList.remove('active');
+            });
+        });
+
+        // Restaurar skin salva
+        const savedSkin = localStorage.getItem('selectedSkin') || 'skin-1';
+        document.body.className = savedSkin;
+        skinOptions.forEach(opt => {
+            if (opt.dataset.skin === savedSkin) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
+
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!skinSelector.contains(e.target)) {
+                skinDropdown.classList.remove('active');
+            }
+        });
+
+        // Suporte a CTRL+V de imagens - Corrigido
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData.items;
+            let hasImage = false;
+            
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    hasImage = true;
+                    e.preventDefault();
+                    
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    
+                    reader.onload = (event) => {
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        img.className = 'pasted-image';
+                        
+                        // Posicionar a imagem na posição do cursor
+                        const cursorPos = textarea.selectionStart;
+                        const lines = textarea.value.substring(0, cursorPos).split('\n');
+                        const currentLine = lines.length - 1;
+                        const lineStartPos = textarea.value.lastIndexOf('\n', cursorPos - 1) + 1;
+                        const charInLine = cursorPos - lineStartPos;
+                        
+                        // Calcular posição em pixels
+                        const topPos = currentLine * lineHeight + 16;
+                        const leftPos = 16 + charInLine * charWidth;
+                        
+                        img.style.left = leftPos + 'px';
+                        img.style.top = topPos + 'px';
+                        
+                        imagesContainer.appendChild(img);
+                        
+                        // Fazer imagem arrastável
+                        let isDragging = false;
+                        let offsetX = 0;
+                        let offsetY = 0;
+
+                        img.addEventListener('mousedown', (e) => {
+                            isDragging = true;
+                            offsetX = e.clientX - img.offsetLeft;
+                            offsetY = e.clientY - img.offsetTop;
+                            img.classList.add('selected');
+                        });
+
+                        document.addEventListener('mousemove', (e) => {
+                            if (isDragging) {
+                                img.style.left = (e.clientX - offsetX) + 'px';
+                                img.style.top = (e.clientY - offsetY) + 'px';
+                            }
+                        });
+
+                        document.addEventListener('mouseup', () => {
+                            isDragging = false;
+                            img.classList.remove('selected');
+                        });
+
+                        // Deletar com Delete
+                        img.addEventListener('click', () => {
+                            img.classList.add('selected');
+                        });
+                        
+                        showTooltip('✓ Imagem colada com sucesso!', e.clientX, e.clientY);
+                    };
+                    
+                    reader.readAsDataURL(blob);
+                }
+            }
+        });
+
+        // Deletar imagem selecionada
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete') {
+                const selectedImg = imagesContainer.querySelector('.pasted-image.selected');
+                if (selectedImg) {
+                    selectedImg.remove();
+                    showTooltip('✓ Imagem removida', 100, 100);
+                }
+            }
+        });
+
+        // Inicializar
+        updateLineNumbers();
+        updateIndentationGuides();
+
+        // Tooltip para dicas
+        function showTooltip(text, x, y) {
+            tooltip.textContent = text;
+            tooltip.classList.add('show');
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+            setTimeout(() => tooltip.classList.remove('show'), 2000);
+        }
+
+        // Dica inicial
+        setTimeout(() => {
+            showTooltip('💡 Dica: Use Ctrl+F para pesquisar, Ctrl+V para colar imagens', 20, 20);
+        }, 1000);
+    </script>
+</body>
+</html>
